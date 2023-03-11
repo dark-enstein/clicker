@@ -25,4 +25,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run Clicker
         run: |
-          python3 clicker.py
+          python3 click.py
+        env:
+          CLICKER_USERNAME: ${{ secrets.CLICKER_USERNAME }}
+          CLICKER_PASSWORD: ${{ secrets.CLICKER_PASSWORD }}
