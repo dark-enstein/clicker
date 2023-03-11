@@ -24,8 +24,8 @@ def load_os_env(path):
     secrets['RECEPIENTS'] = loaded['smtp']['recipients']
     secrets['FROM'] = loaded['smtp']['from']
     secrets['SMTP_SERVER'] = loaded['smtp']['server']
-    secrets['USERNAME'] = loaded['smtp']['auth']['username']
-    secrets['PASSWORD'] = loaded['smtp']['auth']['password']
+    secrets['USERNAME'] = os.getenv('CLICKER_USERNAME')
+    secrets['PASSWORD'] = os.getenv('CLICKER_PASSWORD')
     return secrets
 
 def domain_pages(url):
@@ -159,7 +159,7 @@ opportunities = {}
 max_page_number = 1
 total_found = []
 
-s = load_os_env("./gama/config.yaml")
+s = load_os_env("./koda/config.yaml")
 
 print("URLs loaded:", list(url.keys()))
 

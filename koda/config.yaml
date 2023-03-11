@@ -1,0 +1,7 @@
+--- # Config File
+smtp:
+  server: "email-smtp.us-east-1.amazonaws.com"
+  recipients:
+    - ayo@greystein.com
+  from:
+    - ayobama72@gmail.com
