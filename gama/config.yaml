@@ -1,0 +1,9 @@
+# Config file
+smtp:
+  auth:
+    username:
+    password:
+  recipients:
+    - ayo@greystein.com
+  from:
+    - ayobama72@gmail.com
