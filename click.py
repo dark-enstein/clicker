@@ -11,15 +11,14 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from smtplib import SMTP
 import smtplib
-import sys
 import os
 from datetime import date
 
 # functions
 
 def load_os_env(path):
-    file = open(path, "r")
-    loaded = yaml.load(file, Loader=SafeLoader)
+    with open(path, "r") as file:
+        loaded = yaml.load(file, Loader=SafeLoader)
     secrets = {}
     secrets['RECEPIENTS'] = loaded['smtp']['recipients']
     secrets['FROM'] = loaded['smtp']['from']
