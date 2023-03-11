@@ -1,5 +1,6 @@
 import requests
 import yaml
+import ssl
 from yaml.loader import SafeLoader
 from bs4 import BeautifulSoup
 from tqdm import tqdm
@@ -11,14 +12,21 @@ from email.mime.multipart import MIMEMultipart
 from smtplib import SMTP
 import smtplib
 import sys
+import os
+from datetime import date
+
+# functions
 
 def load_os_env(path):
     file = open(path, "r")
     loaded = yaml.load(file, Loader=SafeLoader)
-    USERNAME = loaded['smtp']['auth']['username']
-    PASSWORD = loaded['smtp']['auth']['password']
-    RECEPIENTS = loaded['smtp']['recipients']
-    FROM = loaded['smtp']['from']
+    secrets = {}
+    secrets['RECEPIENTS'] = loaded['smtp']['recipients']
+    secrets['FROM'] = loaded['smtp']['from']
+    secrets['SMTP_SERVER'] = loaded['smtp']['server']
+    secrets['USERNAME'] = loaded['smtp']['auth']['username']
+    secrets['PASSWORD'] = loaded['smtp']['auth']['password']
+    return secrets
 
 def domain_pages(url):
     # generate a dict of the title mapped to urls of opportunities for the cartegory url passed in 
@@ -76,8 +84,33 @@ def investigate_url_content(url):
             continue
     return found
 
-def send_to_email(df, email):
+def send_to_email(df, s):
     # send email containing df to recipient(s)
+    
+    emaillist = [elem.strip().split(',') for elem in s['RECEPIENTS']]
+    msg = MIMEMultipart()
+    msg['Subject'] = "Top Picks: " + str(date.today())
+    msg['From'] = "ayobama72@gmail.com"
+
+
+    html = """\
+    <html>
+      <head></head>
+      <body>
+        {0}
+      </body>
+    </html>
+    """.format(df.to_html())
+
+    part1 = MIMEText(html, 'html')
+    msg.attach(part1)
+
+    context = ssl.create_default_context()
+
+    with smtplib.SMTP_SSL(s['SMTP_SERVER'], 465, context=context) as server:
+        server.login(s['USERNAME'], s['PASSWORD'])
+        server.sendmail(msg['From'], emaillist , msg.as_string())
+        
     return
 
 # url setup
@@ -120,11 +153,13 @@ USERNAME = ""
 PASSWORD = ""
 RECEPIENTS = []
 FROM = ""
+SMTP_SERVER = ""
+
 opportunities = {}
 max_page_number = 1
 total_found = []
 
-load_os_env("./gama/config.yaml")
+s = load_os_env("./gama/config.yaml")
 
 print("URLs loaded:", list(url.keys()))
 
@@ -135,8 +170,5 @@ for val in tqdm(url.values()):
 df = pd.DataFrame(opportunities.items(), columns=['Opportunity','URL'])
 df['target_found'] = total_found
 
-# spit into csv, and email to me
-df.to_csv('first_generation.csv')
-
 # send table as email
-# send_to_email(df, email)
+send_to_email(df, s)
