@@ -5,3 +5,10 @@ smtp:
     - ayo@greystein.com
   from:
     - ayobama72@gmail.com
+max_pages: 1
+search:
+  target_words:
+    - "application"
+    - "candidates"
+    - "science"
+    - "masters"

@@ -13,9 +13,10 @@ from smtplib import SMTP
 import smtplib
 import os
 from datetime import date
+import json 
+from utils import join_two
 
 # functions
-
 def load_os_env(path):
     with open(path, "r") as file:
         loaded = yaml.load(file, Loader=SafeLoader)
@@ -25,9 +26,12 @@ def load_os_env(path):
     secrets['SMTP_SERVER'] = loaded['smtp']['server']
     secrets['USERNAME'] = os.getenv('CLICKER_USERNAME')
     secrets['PASSWORD'] = os.getenv('CLICKER_PASSWORD')
-    return secrets
+    config = {}
+    config['max_page_number'] = loaded['max_pages']
+    config['target_word_list'] = loaded['search']['target_words']
+    return secrets, config
 
-def domain_pages(url, max_page_number, opportunities, total_found, target_search_list):
+def domain_pages(url, c, opportunities):
     # generate a dict of the title mapped to urls of opportunities for the cartegory url passed in 
     
     page = requests.get(url)
@@ -36,33 +40,33 @@ def domain_pages(url, max_page_number, opportunities, total_found, target_search
     pages = soup.find_all("div", {"class": "page-nav td-pb-padding-side"})
     page_array = [int(pages[0].find("span", {"class": "current"}).text), int(pages[0].find_all('a')[2].get('title'))]
     
-    
-    
-    if page_array[1] > max_page_number:
-        for page in range(page_array[0], max_page_number + 1):
-            get_opportunities(url, page, opportunities, total_found, target_search_list)
+    if page_array[1] > c["max_page_number"]:
+        for page in range(page_array[0], c["max_page_number"] + 1):
+            get_opportunities(url, page, opportunities, c["target_word_list"])
     else:
         for page in range(page_array[0], page_array[1]):
-            get_opportunities(url, page, opportunities, total_found, target_search_list)
+            get_opportunities(url, page, opportunities, c["target_word_list"])
             
     return
 
-def get_opportunities(url, page, opportunities, total_found, target_search_list):
+def get_opportunities(url, page, opportunities, target_word_list):
     # parse the list of opportunities from the provided page
     curated_url = url+"page/"+str(page)+"/"
     page = requests.get(url+"page"+str(page))
     soup = BeautifulSoup(page.content, "html.parser")
     
-    return parse_opportunities(soup, opportunities, total_found, target_search_list)
+    return parse_opportunities(soup, opportunities, target_word_list)
 
-def parse_opportunities(soup, opportunities, total_found, target_search_list):
-    
+def parse_opportunities(soup, opportunities, target_search_list):
     # parse the list opportunities from the provided BeautifulSoup Object
     results = soup.find_all("h3", class_="entry-title td-module-title")
 
     for result in tqdm(results):
-        opportunities[result.find('a').get('title')] = result.find('a').get('href')
-        total_found.append(investigate_url_content(result.find('a').get('href'), target_search_list))
+        found = investigate_url_content(result.find('a').get('href'), target_search_list)
+        if found != "" :
+            opportunities[result.find('a').get('title')] = {}
+            opportunities[result.find('a').get('title')]["url"] = result.find('a').get('href')
+            opportunities[result.find('a').get('title')]["found"] = found
               
     return
 
@@ -80,22 +84,18 @@ def investigate_url_content(url, target_search_list):
 
     for target in target_search_list:
         if target in text:
-            found = found + " | " + target
+            found = join_two(found, target)
         else:
             continue
     return found
 
 def send_to_email(df, s):
     # send email containing df to recipient(s)
-    
     emaillist = [elem.strip().split(',') for elem in s['RECEPIENTS']]
     msg = MIMEMultipart()
-    msg['Subject'] = "Top Picks: " + str(date.today())
+    msg['Subject'] = "Today top picks: " + str(date.today())
     msg['From'] = s['FROM'][0]
     
-    print(s)
-
-
     html = """\
     <html>
       <head></head>
@@ -113,23 +113,17 @@ def send_to_email(df, s):
     with smtplib.SMTP_SSL(s['SMTP_SERVER'], 465, context=context) as server:
         server.login(s['USERNAME'], s['PASSWORD'])
         server.sendmail(msg['From'], emaillist , msg.as_string())
-        
     return
 
 def main():
     """
     Supported URLs for Opportunity for Africans
 
-    base_url = "https://www.opportunitiesforafricans.com/" #doesn't have page number, may not be very needed
     fellowships_url = "https://www.opportunitiesforafricans.com/category/fellowships/"
     internship_url = "https://www.opportunitiesforafricans.com/category/internships/"
     scholarships_masters_url = "https://www.opportunitiesforafricans.com/category/scholarships/"
     scholarships_postgraduate_url = "https://www.opportunitiesforafricans.com/category/scholarships/post-graduate/"
     scholarships_undergraduate_url = "https://www.opportunitiesforafricans.com/category/scholarships/undergraduate/"
-    call_for_nominations_url = "https://www.opportunitiesforafricans.com/category/calls-for-nomination/" (not supported)
-    call_for_papers_url = "https://www.opportunitiesforafricans.com/category/calls-for-papers/"
-    call_for_proposals_url = "https://www.opportunitiesforafricans.com/category/call-for-proposals/"
-    awards_url = "https://www.opportunitiesforafricans.com/category/awards/"
 
     How to filter target searches?
     Search for terms or expressions?
@@ -146,28 +140,24 @@ def main():
     url = {}
     
     # url['base_url'] = "https://www.opportunitiesforafricans.com/"
-    url['fellowships_url'] = "https://www.opportunitiesforafricans.com/category/fellowships/"
+    # url['fellowships_url'] = "https://www.opportunitiesforafricans.com/category/fellowships/"
     # url['internship_url'] = "https://www.opportunitiesforafricans.com/category/internships/"
-    # url['scholarships_masters_url'] = "https://www.opportunitiesforafricans.com/category/scholarships/"
+    url['scholarships_masters_url'] = "https://www.opportunitiesforafricans.com/category/scholarships/"
     # url['scholarships_postgraduate_url'] = "https://www.opportunitiesforafricans.com/category/scholarships/post-graduate/"
     # url['scholarships_undergraduate_url'] = "https://www.opportunitiesforafricans.com/category/scholarships/undergraduate/"
 
-    target_search_list = ["application", "candidates"]
-
     opportunities = {}
-    max_page_number = 1
-    total_found = []
 
-    s = load_os_env("./koda/config.yaml")
+    s, c = load_os_env("./koda/config.yaml")
 
     print("URLs loaded:", list(url.keys()))
 
-    for val in tqdm(url.values()):
-        domain_pages(val, max_page_number, opportunities, total_found, target_search_list)
+    for val in url.values():
+        domain_pages(val, c, opportunities)
 
     # convert to python.dataframe
-    df = pd.DataFrame(opportunities.items(), columns=['Opportunity','URL'])
-    df['target_found'] = total_found
+    df = pd.DataFrame.from_dict(opportunities,orient='index')
+    # print(df)
 
     # send table as email
     send_to_email(df, s)
