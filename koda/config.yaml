@@ -5,6 +5,7 @@ smtp:
     - ayo@greystein.com
   from:
     - ayobama72@gmail.com
+    - ashade.olumidesamuel@yahoo.com
 max_pages: 1
 search:
   target_words:
