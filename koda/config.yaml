@@ -3,7 +3,6 @@ smtp:
   server: "email-smtp.us-east-1.amazonaws.com"
   recipients:
     - ayo@greystein.com
-    - ashade.olumidesamuel@yahoo.com
     - ashadeolumidesamuel@gmail.com
   from:
     - ayobama72@gmail.com
