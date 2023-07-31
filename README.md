@@ -2,20 +2,7 @@
 
 ![Clicker](https://github.com/dark-enstein/clicker/blob/main/clicker.png)
 
-Clicker is a simple and addictive clicking game built with Python and Tkinter. Click as fast as you can to earn points and compete with your friends to achieve the highest score!
-
-## Features
-
-- Click the button as many times as possible within the given time limit.
-- Earn points for each click made before the time runs out.
-- Track and display the highest score achieved during the current session.
-- Play multiple rounds and try to beat your own record.
-- Simple and intuitive user interface.
-- Lightweight and fast-paced game.
-
-## Screenshots
-
-![Clicker Main Window](https://github.com/dark-enstein/clicker/blob/main/screenshots/main_window.png)
+Clicker is a python script that returns links to application based on specified criteria.
 
 ## Requirements
 
@@ -40,14 +27,7 @@ cd clicker
 
 ```bash
 python clicker.py
-```
-
-## How to Play
-
-1. Click the "Start" button to begin the game.
-2. Rapidly click the "Click Me" button as many times as you can within the given time limit.
-3. After the time is up, your score will be displayed.
-4. Click "Start" again to play another round and try to beat your highest score.
+``` 
 
 ## Contributing
 
